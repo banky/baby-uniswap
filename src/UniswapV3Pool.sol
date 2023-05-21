@@ -37,7 +37,7 @@ contract UniswapV3Pool {
 
     // Errors
     error InvalidTickRange();
-    error ZzeroLiquidity();
+    error ZeroLiquidity();
     error InsufficientInputAmount();
 
     // Events
@@ -78,7 +78,7 @@ contract UniswapV3Pool {
         }
 
         if (amount == 0) {
-            revert ZzeroLiquidity();
+            revert ZeroLiquidity();
         }
 
         ticks.update(lowerTick, amount);

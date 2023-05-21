@@ -26,6 +26,10 @@ contract UniswapV3PoolTest is Test, IUniswapV3MintCallback {
         bool mintLiquidity;
     }
 
+    error InvalidTickRange();
+    error ZeroLiquidity();
+    error InsufficientInputAmount();
+
     function setUp() public {
         token0 = new ERC20Mintable("Ether", "ETH", 18);
         token1 = new ERC20Mintable("USDC", "USDC", 18);
@@ -115,6 +119,57 @@ contract UniswapV3PoolTest is Test, IUniswapV3MintCallback {
             1517882343751509868544,
             "invalid current liquidity"
         );
+    }
+
+    function testTickBounds() public {
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            usdcBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 86129,
+            liquidity: 1517882343751509868544,
+            currentSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiquidity: false
+        });
+
+        setupTestCase(params);
+
+        vm.expectRevert(InvalidTickRange.selector);
+        pool.mint(
+            address(this),
+            -887272 - 1,
+            params.upperTick,
+            params.liquidity
+        );
+
+        vm.expectRevert(InvalidTickRange.selector);
+        pool.mint(
+            address(this),
+            params.lowerTick,
+            887272 + 1,
+            params.liquidity
+        );
+    }
+
+    function testZeroLiquidity() public {
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            usdcBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 86129,
+            liquidity: 1517882343751509868544,
+            currentSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiquidity: false
+        });
+
+        setupTestCase(params);
+
+        vm.expectRevert(ZeroLiquidity.selector);
+        pool.mint(address(this), params.lowerTick, params.upperTick, 0);
     }
 
     function uniswapV3MintCallback(uint256 amount0, uint256 amount1) public {
