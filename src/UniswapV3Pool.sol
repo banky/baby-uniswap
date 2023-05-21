@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "./lib/Tick.sol";
 import "./lib/Position.sol";
+import "./interfaces/IERC20.sol";
+import "./interfaces/IUniswapV3MintCallback.sol";
 
 contract UniswapV3Pool {
     using Tick for mapping(int24 => Tick.Info);
@@ -103,19 +105,34 @@ contract UniswapV3Pool {
             balance1Before = balance1();
         }
 
+        IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(
+            amount0,
+            amount1
+        );
+
         if (amount0 > 0 && balance0Before + amount0 > balance0()) {
             revert InsufficientInputAmount();
         }
         if (amount1 > 0 && balance1Before + amount1 > balance1()) {
             revert InsufficientInputAmount();
         }
+
+        emit Mint(
+            msg.sender,
+            owner,
+            lowerTick,
+            upperTick,
+            amount,
+            amount0,
+            amount1
+        );
     }
 
-    function balance0() internal returns (uint256) {
+    function balance0() internal view returns (uint256) {
         return IERC20(token0).balanceOf(address(this));
     }
 
-    function balance1() internal returns (uint256) {
+    function balance1() internal view returns (uint256) {
         return IERC20(token1).balanceOf(address(this));
     }
 }
